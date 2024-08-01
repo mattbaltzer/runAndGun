@@ -26,15 +26,17 @@ class Player(Sprite):
         self.direction = pygame.Vector2()
         self.speed = 500
         self.collision_sprites = collision_sprites
+        self.gravity = 50
+        self.on_ground = False
 
     def input(self):
         keys = pygame.key.get_pressed()
         self.direction.x = int(keys[pygame.K_d]) - int(keys[pygame.K_a])
-        self.direction.y = int(keys[pygame.K_s]) - int(keys[pygame.K_w])
-        # if keys[pygame.K_d]:
-        #     self.direction.x += 1
-        #     self.facing_right = True
-
+        # self.direction.y = int(keys[pygame.K_s]) - int(keys[pygame.K_w])
+        # self.direction = self.direction.normalize() if self.direction else self.direction
+        if keys[pygame.K_SPACE] and self.on_ground:
+            self.direction.y = -20
+            
         # if keys[pygame.K_a]:
         #     self.direction.x -= 1
         #     self.facing_right = False
@@ -46,11 +48,15 @@ class Player(Sprite):
         #     self.direction.y += 1
 
     def move(self, dt):
-        self.rect.centery += self.direction.y * self.speed * dt
-        self.collision('vertical')
+        # Horizontal movement
         self.rect.centerx += self.direction.x * self.speed * dt
         self.collision('horizontal')
-        self.direction = self.direction.normalize() if self.direction else self.direction
+
+        # Vertical movement
+        # This increases the direction value on each frame by the gravity variable multiplied by dt
+        self.direction.y += self.gravity * dt
+        self.rect.centery += self.direction.y
+        self.collision('vertical')
 
     def collision(self, direction):
         for sprite in self.collision_sprites:
@@ -63,10 +69,18 @@ class Player(Sprite):
                 if direction == 'vertical':
                     if self.direction.y > 0:
                         self.rect.bottom = sprite.rect.top
+                        self.direction.y = 0
                     if self.direction.y < 0:
                         self.rect.top = sprite.rect.bottom
-                
 
+    def check_ground(self):
+        # This creates a rectangle on the player that can be used to check if they are on the floor by putting the rectangle on the bottom of the player
+        bottom_rect = pygame.FRect((0,0), (self.rect.width, 2)).move_to(midtop = self.rect.midbottom)
+        # Looks at the collision between the bottom rectangle and the level rectangle and returns the index of them. -1 means no collision
+        self.on_ground = True if bottom_rect.collidelist([sprite.rect for sprite in self.collision_sprites]) >= 0 else False
+        
+                        
     def update(self, dt):
+        self.check_ground()
         self.move(dt)
         self.input()
