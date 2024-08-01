@@ -1,17 +1,38 @@
 from settings import * 
+from sprites import *
+from groups import *
+# This imports a TMX map that you can use inside of the code
+from pytmx.util_pygame import load_pygame
 
 class Game:
     def __init__(self):
         pygame.init()
         self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-        pygame.display.set_caption('Platformer')
+        pygame.display.set_caption('Run and Gun')
         self.clock = pygame.time.Clock()
         self.running = True
 
-        # groups 
-        self.all_sprites = pygame.sprite.Group()
+        # Groups 
+        self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
 
+        # Load the game
+        self.setup()
+
+    def setup(self):
+        map = load_pygame(join('.', 'data', 'maps', 'world.tmx'))
+
+        for x, y, image in map.get_layer_by_name('Main').tiles():
+            # Creates the collision object for the player to interact with. Didn't have a surface so had to create one with pygame by using the width and height of the collision object
+            Sprite((x * TILE_SIZE, y * TILE_SIZE), image, (self.all_sprites, self.collision_sprites))
+
+        for x, y, image in map.get_layer_by_name('Decoration').tiles():
+            Sprite((x * TILE_SIZE, y * TILE_SIZE), image, (self.all_sprites))
+
+        for obj in map.get_layer_by_name('Entities'):
+            if obj.name == 'Player':
+                # Putting the collision sprites at the end of Player makes it an arguement and allows the player to access the group, it isn't in the Collision Sprites group
+                self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
 
     def run(self):
         while self.running:
@@ -26,7 +47,8 @@ class Game:
 
             # draw 
             self.display_surface.fill(BG_COLOR)
-            self.all_sprites.draw(self.display_surface)
+            # This is causing the display surface to follow the player around, like a camera
+            self.all_sprites.draw(self.player.rect.center)
             pygame.display.update()
         
         pygame.quit()
