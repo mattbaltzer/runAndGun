@@ -1,6 +1,7 @@
 from settings import * 
 from sprites import *
 from groups import *
+from support import *
 # This imports a TMX map that you can use inside of the code
 from pytmx.util_pygame import load_pygame
 
@@ -17,7 +18,17 @@ class Game:
         self.collision_sprites = pygame.sprite.Group()
 
         # Load the game
+        self.load_assets()
         self.setup()
+
+    def load_assets(self):
+        pass
+        # Loading the graphics
+        self.player_frames = import_folder('images', 'player')
+        self.bullet_surf = import_image('images', 'gun', 'bullet')
+        self.fire_surf = import_image('images', 'gun', 'fire')
+        self.bee_frames = import_folder('images', 'enemies', 'bee')
+        self.worm_frames = import_folder('images', 'enemies', 'worm')
 
     def setup(self):
         map = load_pygame(join('.', 'data', 'maps', 'world.tmx'))
@@ -32,7 +43,7 @@ class Game:
         for obj in map.get_layer_by_name('Entities'):
             if obj.name == 'Player':
                 # Putting the collision sprites at the end of Player makes it an arguement and allows the player to access the group, it isn't in the Collision Sprites group
-                self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
+                self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites, self.player_frames)
 
     def run(self):
         while self.running:
