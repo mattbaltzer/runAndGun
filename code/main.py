@@ -2,6 +2,8 @@ from settings import *
 from sprites import *
 from groups import *
 from support import *
+from times import Timer
+from random import randint
 # This imports a TMX map that you can use inside of the code
 from pytmx.util_pygame import load_pygame
 
@@ -16,13 +18,22 @@ class Game:
         # Groups 
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
+        self.bullet_sprites = pygame.sprite.Group()
 
         # Load the game
         self.load_assets()
         self.setup()
 
+        # Timers for the game
+        self.bee_timer = Timer(1000, func= self.create_bee, autostart=True, repeat=True)
+
+    def create_bee(self):
+        Bee(self.bee_frames, (randint(300, 600), randint(300, 600)), self.all_sprites)
+
+    def create_bullet(self, pos, direction):
+        Bullet(self.bullet_surf, pos, direction, (self.all_sprites, self.bullet_sprites))
+
     def load_assets(self):
-        pass
         # Loading the graphics
         self.player_frames = import_folder('images', 'player')
         self.bullet_surf = import_image('images', 'gun', 'bullet')
@@ -30,6 +41,9 @@ class Game:
         self.bee_frames = import_folder('images', 'enemies', 'bee')
         self.worm_frames = import_folder('images', 'enemies', 'worm')
 
+        # Loading the sounds
+        self.audio = audio_importer('audio')
+        
     def setup(self):
         map = load_pygame(join('.', 'data', 'maps', 'world.tmx'))
 
@@ -43,7 +57,11 @@ class Game:
         for obj in map.get_layer_by_name('Entities'):
             if obj.name == 'Player':
                 # Putting the collision sprites at the end of Player makes it an arguement and allows the player to access the group, it isn't in the Collision Sprites group
-                self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites, self.player_frames)
+                self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites, self.player_frames, self.create_bullet)
+
+        # Enemy setup
+        
+        Worm(self.worm_frames, (500, 700), self.all_sprites)
 
     def run(self):
         while self.running:
@@ -54,6 +72,7 @@ class Game:
                     self.running = False 
             
             # update
+            self.bee_timer.update()
             self.all_sprites.update(dt)
 
             # draw 

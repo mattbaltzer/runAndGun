@@ -6,6 +6,14 @@ def import_image(*path, format = 'png', alpha = True):
     # Returns the file location and converts it to alpha if alpha is true otherwise it just converts it
     return pygame.image.load(full_path).convert_alpha() if alpha else pygame.image.load(full_path).convert()
 
+def audio_importer(*path):
+    audio_dict = {}
+    for folder_path, _, file_names in walk(join(*path)):
+        for file_name in file_names:
+            full_path = join(folder_path, file_name)
+            audio_dict[file_name.split('.')[0]] = pygame.mixer.Sound(full_path)
+    return audio_dict
+
 def import_folder(*path):
     frames = []
     # Using the walk method to walk through the folder path to the sub folders and grab the file names

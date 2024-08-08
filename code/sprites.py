@@ -1,10 +1,22 @@
 from settings import *
+from times import Timer
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, pos, surf, groups):
         super().__init__(groups)
         self.image = surf
         self.rect = self.image.get_frect(topleft = pos)
+
+class Bullet(Sprite):
+    def __init__(self, surf, pos, direction, groups):
+        super().__init__(pos, surf, groups)
+
+        # Movement for the bullet
+        self.direction = direction
+        self.speed = 850
+
+    def update(self, dt):
+        self.rect.x += self.direction * self.speed * dt
 
 class AnimatedSprite(Sprite):
     def __init__(self, frames, pos, groups):
@@ -16,14 +28,14 @@ class AnimatedSprite(Sprite):
         self.image = self.frames[int(self.frame_index) % len(self.frames)]
     
 class Player(AnimatedSprite):
-    def __init__(self, pos, groups, collision_sprites, frames):
-        surf = pygame.Surface((40,80))
+    def __init__(self, pos, groups, collision_sprites, frames, create_bullet):
         super().__init__(frames, pos, groups)
-        self.pos = pos
+        self.create_bullet = create_bullet
 
         # Player image
         self.rect = self.image.get_frect(center = pos)
         self.facing_right = True
+        self.flip = False
 
         # Player movement and direction
         self.direction = pygame.Vector2()
@@ -32,23 +44,18 @@ class Player(AnimatedSprite):
         self.gravity = 50
         self.on_ground = False
 
+        # Player timers
+        self.shoot_timer = Timer(1000)
+
     def input(self):
         keys = pygame.key.get_pressed()
         self.direction.x = int(keys[pygame.K_d]) - int(keys[pygame.K_a])
-        # self.direction.y = int(keys[pygame.K_s]) - int(keys[pygame.K_w])
-        # self.direction = self.direction.normalize() if self.direction else self.direction
         if keys[pygame.K_SPACE] and self.on_ground:
-            self.direction.y = -20
-            
-        # if keys[pygame.K_a]:
-        #     self.direction.x -= 1
-        #     self.facing_right = False
+            self.direction.y = -20  
 
-        # if keys[pygame.K_w]:
-        #     self.direction.y -= 1
-
-        # if keys[pygame.K_s]:
-        #     self.direction.y += 1
+        if pygame.mouse.get_pressed()[0] and not self.shoot_timer:
+            self.create_bullet(self.rect.center, -1 if self.flip else 1)
+            self.shoot_timer.activate()
 
     def move(self, dt):
         # Horizontal movement
@@ -82,8 +89,34 @@ class Player(AnimatedSprite):
         # Looks at the collision between the bottom rectangle and the level rectangle and returns the index of them. -1 means no collision
         self.on_ground = True if bottom_rect.collidelist([sprite.rect for sprite in self.collision_sprites]) >= 0 else False
 
+    def animate(self, dt):
+        if self.direction.x:
+            self.frame_index += self.animation_speed * dt
+            self.flip = self.direction.x < 0
+        else:
+            self.frame_index = 0
+
+        self.frame_index = 1 if not self.on_ground else self.frame_index
+        self.image = self.frames[int(self.frame_index) % len(self.frames)]
+        self.image = pygame.transform.flip(self.image, self.flip, False)
+
     def update(self, dt):
+        self.shoot_timer.update()
         self.check_ground()
         self.move(dt)
         self.input()
+        self.animate(dt)
+
+class Worm(AnimatedSprite):
+    def __init__(self, frames, pos, groups):
+        super().__init__(frames, pos, groups)
+
+    def update(self, dt):
+        self.animate(dt)
+
+class Bee(AnimatedSprite):
+    def __init__(self, frames, pos, groups):
+        super().__init__(frames, pos, groups)
+
+    def update(self, dt):
         self.animate(dt)
