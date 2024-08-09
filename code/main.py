@@ -31,7 +31,11 @@ class Game:
         Bee(self.bee_frames, (randint(300, 600), randint(300, 600)), self.all_sprites)
 
     def create_bullet(self, pos, direction):
-        Bullet(self.bullet_surf, pos, direction, (self.all_sprites, self.bullet_sprites))
+        # If the player is facing to the right, you'd place the topleft of the bullet 34 pixels,
+        # otherwise if you're facing left you move the bullet by it's width and then adding 34 pixels
+        x = pos[0] + direction * 34 if direction == 1 else pos[0] + direction * 34 - self.bullet_surf.get_width()
+        Bullet(self.bullet_surf, (x, pos[1]), direction, (self.all_sprites, self.bullet_sprites))
+        Fire(self.fire_surf, pos, self.all_sprites, self.player)
 
     def load_assets(self):
         # Loading the graphics

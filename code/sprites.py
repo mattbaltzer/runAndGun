@@ -11,12 +11,37 @@ class Bullet(Sprite):
     def __init__(self, surf, pos, direction, groups):
         super().__init__(pos, surf, groups)
 
+        # Bullet facing adjustment
+        self.image = pygame.transform.flip(self.image, direction == -1, False)
+
         # Movement for the bullet
         self.direction = direction
         self.speed = 850
 
     def update(self, dt):
         self.rect.x += self.direction * self.speed * dt
+
+class Fire(Sprite):
+    def __init__(self, surf, pos, groups, player):
+        super().__init__(pos, surf, groups)
+        self.player = player
+        self.flip = player.flip
+        self.timer = Timer(100, autostart=True, func=self.kill)
+        self.y_offset = pygame.Vector2(0, 8)
+
+        if self.player.flip:
+            self.rect.midright = self.player.rect.midleft + self.y_offset
+            self.image = pygame.transform.flip(self.image, True, False)
+        else:
+            self.rect.midleft = self.player.rect.midright + self.y_offset
+
+    def update(self, _):
+        self.timer.update()
+
+        if self.player.flip:
+            self.rect.midright = self.player.rect.midleft + self.y_offset
+        else:
+            self.rect.midleft = self.player.rect.midright + self.y_offset
 
 class AnimatedSprite(Sprite):
     def __init__(self, frames, pos, groups):
@@ -45,7 +70,7 @@ class Player(AnimatedSprite):
         self.on_ground = False
 
         # Player timers
-        self.shoot_timer = Timer(1000)
+        self.shoot_timer = Timer(500)
 
     def input(self):
         keys = pygame.key.get_pressed()
