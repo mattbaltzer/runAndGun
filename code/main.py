@@ -25,10 +25,15 @@ class Game:
         self.setup()
 
         # Timers for the game
-        self.bee_timer = Timer(1000, func= self.create_bee, autostart=True, repeat=True)
+        self.bee_timer = Timer(800, func= self.create_bee, autostart=True, repeat=True)
 
     def create_bee(self):
-        Bee(self.bee_frames, (randint(300, 600), randint(300, 600)), self.all_sprites)
+        Bee(
+            frames=self.bee_frames, 
+            pos = (self.level_width + WINDOW_WIDTH, randint(0, self.level_height)), 
+            groups = self.all_sprites,
+            speed = randint(300, 500),
+            )
 
     def create_bullet(self, pos, direction):
         # If the player is facing to the right, you'd place the topleft of the bullet 34 pixels,
@@ -50,6 +55,8 @@ class Game:
         
     def setup(self):
         map = load_pygame(join('.', 'data', 'maps', 'world.tmx'))
+        self.level_width = map.width * TILE_SIZE
+        self.level_height = map.height * TILE_SIZE
 
         for x, y, image in map.get_layer_by_name('Main').tiles():
             # Creates the collision object for the player to interact with. Didn't have a surface so had to create one with pygame by using the width and height of the collision object
@@ -62,10 +69,8 @@ class Game:
             if obj.name == 'Player':
                 # Putting the collision sprites at the end of Player makes it an arguement and allows the player to access the group, it isn't in the Collision Sprites group
                 self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites, self.player_frames, self.create_bullet)
-
-        # Enemy setup
-        
-        Worm(self.worm_frames, (500, 700), self.all_sprites)
+            if obj.name == 'Worm':
+                Worm(self.worm_frames, pygame.FRect(obj.x, obj.y, obj.width, obj.height), self.all_sprites)
 
     def run(self):
         while self.running:

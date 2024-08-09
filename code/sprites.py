@@ -1,5 +1,7 @@
 from settings import *
 from times import Timer
+from math import sin
+from random import randint
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, pos, surf, groups):
@@ -43,6 +45,9 @@ class Fire(Sprite):
         else:
             self.rect.midleft = self.player.rect.midright + self.y_offset
 
+        if self.flip != self.player.flip:
+            self.kill()
+
 class AnimatedSprite(Sprite):
     def __init__(self, frames, pos, groups):
         self.frames, self.frame_index, self.animation_speed = frames, 0, 10
@@ -51,6 +56,15 @@ class AnimatedSprite(Sprite):
     def animate(self, dt):
         self.frame_index += self.animation_speed * dt
         self.image = self.frames[int(self.frame_index) % len(self.frames)]
+    
+class Enemy(AnimatedSprite):
+    def __init__(self, frames, pos, groups):
+        super().__init__(frames, pos, groups)
+
+    def update(self, dt):
+        self.animate(dt)
+        self.move(dt)
+        self.constraint()
     
 class Player(AnimatedSprite):
     def __init__(self, pos, groups, collision_sprites, frames, create_bullet):
@@ -132,16 +146,27 @@ class Player(AnimatedSprite):
         self.input()
         self.animate(dt)
 
-class Worm(AnimatedSprite):
-    def __init__(self, frames, pos, groups):
+class Worm(Enemy):
+    def __init__(self, frames, rect, groups):
+        super().__init__(frames, rect.topleft, groups)
+
+    def move(self, dt):
+        pass
+
+    def constraint(self):
+        pass
+
+class Bee(Enemy):
+    def __init__(self, frames, pos, groups, speed):
         super().__init__(frames, pos, groups)
+        self.speed = speed
+        self.amplitude = randint(400, 600)
+        self.frequency = randint(300, 550)
 
-    def update(self, dt):
-        self.animate(dt)
+    def move(self, dt):
+        self.rect.x -= self.speed * dt
+        self.rect.y += sin(pygame.time.get_ticks() / self.frequency) * self.amplitude * dt
 
-class Bee(AnimatedSprite):
-    def __init__(self, frames, pos, groups):
-        super().__init__(frames, pos, groups)
-
-    def update(self, dt):
-        self.animate(dt)
+    def constraint(self):
+        if self.rect.right <= 0:
+            self.kill()
